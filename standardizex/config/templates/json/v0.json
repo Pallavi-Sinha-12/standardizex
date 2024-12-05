@@ -1,0 +1,26 @@
+{
+    "data_product_name": "<Name to assign to the DP after standardization>",
+    "raw_data_product_name": "<source raw data product name>",
+    "schema": {
+      "source_columns": [
+        {
+          "raw_name": "<column name in raw data product>",
+          "standardized_name": "<standardized name for the raw column>",
+          "data_type": "<The data type name we want to cast the column data to>",
+          "sql_transformation": "<The transformation rule that is written in Spark SQL>"
+        }
+      ],
+      "new_columns": [
+        {
+          "name": "<Name of the new column to be created>",
+          "data_type": "<The data type name we want to cast the column data to>",
+          "sql_transformation": "<The transformation rule that is written in Spark SQL>"
+        }
+      ]
+    },
+    "metadata": {
+      "column_descriptions": {
+        "<column_name>": "<description>"
+      }
+    }
+}
