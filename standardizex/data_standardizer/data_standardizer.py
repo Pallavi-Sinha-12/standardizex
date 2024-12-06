@@ -34,7 +34,7 @@ class DataStandardizer:
         self.temp_std_dp_path = temp_std_dp_path
         self.std_dp_path = std_dp_path
 
-    def create_temp_std_dp_with_source_columns(self, source_columns_schema_df : DataFrame):
+    def create_temp_std_dp_with_source_columns(self, source_columns_schema_df: DataFrame):
         source_columns_schema_df.createOrReplaceTempView("source_columns_config_table")
         select_query_sql = f"""
             SELECT 
@@ -55,7 +55,13 @@ class DataStandardizer:
         df = self.spark.sql(select_query_sql)
         select_query = df.first()["select_query"]
         print("temp_std_dp_path : ", self.temp_std_dp_path)
-        create_sql_query = f"CREATE OR REPLACE TABLE delta.`{self.temp_std_dp_path}` as ( " + select_query + ")"
+
+        create_sql_query = f"""
+            CREATE OR REPLACE TABLE delta.`{self.temp_std_dp_path}`
+            USING DELTA
+            AS {select_query}
+        """
+        
         self.spark.sql(create_sql_query)
 
 
@@ -76,6 +82,7 @@ class DataStandardizer:
         temp_std_df = self.spark.read.format("delta").load(self.temp_std_dp_path)
         temp_std_df = temp_std_df.select(column_sequence_order)
         temp_std_df.write.option("mergeSchema", "true").format("delta").mode("overwrite").save(self.std_dp_path)
+        self.spark.sql(f"DROP TABLE delta.`{self.temp_std_dp_path}`")
 
     def run(self, config_reader : ConfigReaderContract, verbose = True):
 

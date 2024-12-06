@@ -10,7 +10,7 @@ template = generate_config_template(
 )
 print(template)
 
-config_path = "config.json"
+config_path = "temp/config.json"
 validation_dict = validate_config(
     config_type=config_type,
     config_version=config_version,

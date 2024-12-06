@@ -3,3 +3,5 @@ venv
 temp
 data
 .talismanrc
+metastore_db
+derby.log
