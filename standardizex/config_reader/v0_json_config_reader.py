@@ -1,6 +1,8 @@
 from standardizex.config_reader.config_reader_contract import ConfigReaderContract
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import explode
+
+
 class v0JSONConfigReader(ConfigReaderContract):
     """
     A class that reads and extracts information from a JSON config file.
@@ -13,7 +15,7 @@ class v0JSONConfigReader(ConfigReaderContract):
 
     """
 
-    def __init__(self, spark, config_path : str):
+    def __init__(self, spark, config_path: str):
         """
         Initializes a new instance of the ConfigReader class.
 
@@ -33,15 +35,17 @@ class v0JSONConfigReader(ConfigReaderContract):
             DataFrame: The DataFrame containing the source columns schema.
 
         """
-        exploded_df = self.config_df.select(explode(self.config_df["schema"].source_columns).alias("source_columns"))
+        exploded_df = self.config_df.select(
+            explode(self.config_df["schema"].source_columns).alias("source_columns")
+        )
         source_columns_schema_df = exploded_df.selectExpr(
             "source_columns.raw_name as raw_name",
             "source_columns.standardized_name as standardized_name",
             "source_columns.data_type as data_type",
-            "source_columns.sql_transformation as sql_transformation"
+            "source_columns.sql_transformation as sql_transformation",
         )
         return source_columns_schema_df
-    
+
     def read_new_columns_schema(self) -> DataFrame:
         """
         Reads the schema information for the new columns from the configuration file.
@@ -50,11 +54,13 @@ class v0JSONConfigReader(ConfigReaderContract):
             DataFrame: The DataFrame containing the new columns schema.
 
         """
-        exploded_df = self.config_df.select(explode(self.config_df["schema"].new_columns).alias("new_columns"))
+        exploded_df = self.config_df.select(
+            explode(self.config_df["schema"].new_columns).alias("new_columns")
+        )
         new_columns_schema_df = exploded_df.selectExpr(
             "new_columns.name as name",
             "new_columns.data_type as data_type",
-            "new_columns.sql_transformation as sql_transformation"
+            "new_columns.sql_transformation as sql_transformation",
         )
         return new_columns_schema_df
 
@@ -66,7 +72,9 @@ class v0JSONConfigReader(ConfigReaderContract):
             dict: A dictionary containing the column descriptions.
 
         """
-        metadata_df = self.config_df.select("metadata.column_descriptions").alias("column_descriptions")
+        metadata_df = self.config_df.select("metadata.column_descriptions").alias(
+            "column_descriptions"
+        )
         descriptions_row_obj = metadata_df.first()["column_descriptions"]
         return descriptions_row_obj.asDict()
 

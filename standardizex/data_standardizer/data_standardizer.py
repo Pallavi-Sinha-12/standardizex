@@ -14,16 +14,16 @@ class DataStandardizer:
     Methods:
         create_temp_std_dp_with_source_columns(source_columns_schema_df):
             Creates a temporary standardized data table with source columns based on the provided schema.
-        
+
         add_new_columns_in_temp_std_dp(new_columns_schema_df):
             Adds new columns to the temporary standardized data table based on the provided schema.
-        
+
         update_column_descriptions_metadata(column_descriptions_dict):
             Updates the column descriptions metadata in the temporary standardized data table.
-        
+
         move_data_to_std_dp(column_sequence_order):
             Moves the data from the temporary standardized data table to the final standardized data table.
-        
+
         run(config_reader):
             Runs the data standardization process based on the provided configuration reader.
     """
@@ -34,7 +34,9 @@ class DataStandardizer:
         self.temp_std_dp_path = temp_std_dp_path
         self.std_dp_path = std_dp_path
 
-    def create_temp_std_dp_with_source_columns(self, source_columns_schema_df: DataFrame):
+    def create_temp_std_dp_with_source_columns(
+        self, source_columns_schema_df: DataFrame
+    ):
         source_columns_schema_df.createOrReplaceTempView("source_columns_config_table")
         select_query_sql = f"""
             SELECT 
@@ -61,30 +63,33 @@ class DataStandardizer:
             USING DELTA
             AS {select_query}
         """
-        
+
         self.spark.sql(create_sql_query)
 
-
-    def add_new_columns_in_temp_std_dp(self, new_columns_schema_df : DataFrame):
-        new_columns_schema_df_rows = new_columns_schema_df.collect()        
+    def add_new_columns_in_temp_std_dp(self, new_columns_schema_df: DataFrame):
+        new_columns_schema_df_rows = new_columns_schema_df.collect()
         for row in new_columns_schema_df_rows:
-            add_new_columns_sql = f"ALTER TABLE delta.`{self.temp_std_dp_path}` ADD COLUMN {row['name']} {row['data_type']}"   
-            sql_transformation = row["sql_transformation"].replace("{temp_std_dp_path}", self.temp_std_dp_path)  
-            self.spark.sql(add_new_columns_sql)  
-            self.spark.sql(sql_transformation)      
-    
-    def update_column_descriptions_metadata(self, column_descriptions_dict : dict):
-        for column_name,description in column_descriptions_dict.items():
+            add_new_columns_sql = f"ALTER TABLE delta.`{self.temp_std_dp_path}` ADD COLUMN {row['name']} {row['data_type']}"
+            sql_transformation = row["sql_transformation"].replace(
+                "{temp_std_dp_path}", self.temp_std_dp_path
+            )
+            self.spark.sql(add_new_columns_sql)
+            self.spark.sql(sql_transformation)
+
+    def update_column_descriptions_metadata(self, column_descriptions_dict: dict):
+        for column_name, description in column_descriptions_dict.items():
             column_description_update_sql = f"ALTER TABLE delta.`{self.temp_std_dp_path}` CHANGE COLUMN {column_name} COMMENT '{description}';"
             self.spark.sql(column_description_update_sql)
-        
-    def move_data_to_std_dp(self, column_sequence_order : list):
+
+    def move_data_to_std_dp(self, column_sequence_order: list):
         temp_std_df = self.spark.read.format("delta").load(self.temp_std_dp_path)
         temp_std_df = temp_std_df.select(column_sequence_order)
-        temp_std_df.write.option("mergeSchema", "true").format("delta").mode("overwrite").save(self.std_dp_path)
+        temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
+            "overwrite"
+        ).save(self.std_dp_path)
         self.spark.sql(f"DROP TABLE delta.`{self.temp_std_dp_path}`")
 
-    def run(self, config_reader : ConfigReaderContract, verbose = True):
+    def run(self, config_reader: ConfigReaderContract, verbose=True):
 
         source_columns_schema_df = config_reader.read_source_columns_schema()
         self.create_temp_std_dp_with_source_columns(source_columns_schema_df)
@@ -102,11 +107,10 @@ class DataStandardizer:
             print("Raw df : ")
             raw_df = self.spark.read.format("delta").load(self.raw_dp_path)
             raw_df.show(5)
-            
+
             print("Standardized df : ")
             std_df = self.spark.read.format("delta").load(self.std_dp_path)
             std_df.show(5)
 
             print("Schema information for Standardized df : ")
             std_df.printSchema()
-     

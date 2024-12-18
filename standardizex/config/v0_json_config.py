@@ -2,13 +2,13 @@ from standardizex.config.config_contract import ConfigContract
 import json
 from typing import Tuple
 
+
 class v0JSONConfig(ConfigContract):
 
     def __init__(self, spark):
         self.spark = spark
         self.template_path = "standardizex/config/templates/json/v0.json"
 
-    
     def generate_template(self) -> dict:
         """
         Generates a configuration template file.
@@ -18,7 +18,7 @@ class v0JSONConfig(ConfigContract):
             template_dict = json.load(file)
 
         return template_dict
-    
+
     def validate_config(self, config_path: str) -> dict:
         """
         Validates the configuration file.
@@ -30,9 +30,19 @@ class v0JSONConfig(ConfigContract):
             bool: True if the configuration is valid, False otherwise.
             str: Error message if the configuration is invalid.
         """
-        required_keys = ["data_product_name", "raw_data_product_name", "schema", "metadata"]
+        required_keys = [
+            "data_product_name",
+            "raw_data_product_name",
+            "schema",
+            "metadata",
+        ]
         schema_keys = ["source_columns", "new_columns"]
-        source_column_keys = ["raw_name", "standardized_name", "data_type", "sql_transformation"]
+        source_column_keys = [
+            "raw_name",
+            "standardized_name",
+            "data_type",
+            "sql_transformation",
+        ]
         new_column_keys = ["name", "data_type", "sql_transformation"]
         metadata_keys = ["column_descriptions"]
 
@@ -57,14 +67,18 @@ class v0JSONConfig(ConfigContract):
             for key in source_column_keys:
                 if key not in column:
                     validation_dict["is_valid"] = False
-                    validation_dict["error"] = f"Missing required key in source_columns: {key}"
+                    validation_dict["error"] = (
+                        f"Missing required key in source_columns: {key}"
+                    )
                     return validation_dict
-        
+
         for column in schema["new_columns"]:
             for key in new_column_keys:
                 if key not in column:
                     validation_dict["is_valid"] = False
-                    validation_dict["error"] = f"Missing required key in new_columns: {key}"
+                    validation_dict["error"] = (
+                        f"Missing required key in new_columns: {key}"
+                    )
                     return validation_dict
 
         metadata = config["metadata"]

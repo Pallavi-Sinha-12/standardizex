@@ -5,16 +5,13 @@ from standardizex import run_standardization
 config_type = "json"
 config_version = "v0"
 template = generate_config_template(
-    config_type=config_type,
-    config_version=config_version
+    config_type=config_type, config_version=config_version
 )
 print(template)
 
 config_path = "temp/config.json"
 validation_dict = validate_config(
-    config_type=config_type,
-    config_version=config_version,
-    config_path=config_path
+    config_type=config_type, config_version=config_version, config_path=config_path
 )
 print(validation_dict)
 
@@ -33,7 +30,5 @@ run_standardization(
     raw_dp_path=raw_dp_path,
     temp_std_dp_path=temp_std_dp_path,
     std_dp_path=std_dp_path,
-    verbose=True
+    verbose=True,
 )
-
-
