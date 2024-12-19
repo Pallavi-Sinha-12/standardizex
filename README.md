@@ -33,7 +33,7 @@ pip install standardizex
 
 ### Sample Data Preparation
 
-Let's take an example to understand how we can use StandardizeX to standardize a delta table.
+Let's take an example to understand how we can use StandardizeX to standardize a delta table. For this example, we are working in local PySpark environment.
 
 Before starting, we will create a sample raw data product - `supplier` in delta format.
 
@@ -48,12 +48,17 @@ Below is the code to create both the tables:-
 ```python
 from pyspark.sql import SparkSession
 
-# Initialize Spark session with Delta Lake support
-spark = SparkSession.builder \
-    .appName("DeltaTableCreation") \
-    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+# Initialize Spark session with Delta Lake support locally
+spark = (
+    SparkSession.builder.appName("DeltaTableCreation")
+    .config("spark.jars.packages", "io.delta:delta-spark_2.12:3.1.0")
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+    .config(
+        "spark.sql.catalog.spark_catalog",
+        "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    )
     .getOrCreate()
+        )
 
 supplier_data = [
     (9999, "john", 10, "ball", 100, "john@email.com"),
@@ -85,13 +90,49 @@ Product_df.write.format("delta").mode("overwrite").save("data/Product")
 
 1. **Config File Template** 🛠️: 
 
-First we will import the package and get the template of the config file. This template will help us to understand the structure of the config file.
+First we will import the package and get the template of the config file. This template will help us to understand the structure of the config file. We will be using the by default template provided by the package. As the package is designed to be extensible, users can create their own templates to suit their specific requirements and add them to the package.
+
+`generate_config_template` takes the following parameters:
+- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
+- `config_type`: Type of the config file. Default is `json`.
+- `config_version`: Version of the config file. Default is `v0`.
 
 ```python
-from standardizex import get_config_template
+from standardizex import generate_config_template
 
-config_template = get_config_template()
+config_template = generate_config_template(spark = spark)
 print(config_template)
+```
+
+The config template will look like below:-
+
+```json
+{
+    "data_product_name": "<Name to assign to the DP after standardization>",
+    "raw_data_product_name": "<source raw data product name>",
+    "schema": {
+      "source_columns": [
+        {
+          "raw_name": "<column name in raw data product>",
+          "standardized_name": "<standardized name for the raw column>",
+          "data_type": "<The data type name we want to cast the column data to>",
+          "sql_transformation": "<The transformation rule that is written in Spark SQL>"
+        }
+      ],
+      "new_columns": [
+        {
+          "name": "<Name of the new column to be created>",
+          "data_type": "<The data type name we want to cast the column data to>",
+          "sql_transformation": "<The transformation rule that is written in Spark SQL>"
+        }
+      ]
+    },
+    "metadata": {
+      "column_descriptions": {
+        "<column_name>": "<description>"
+      }
+    }
+}
 ```
 
 2. **Config File Creation** 📝:
@@ -172,9 +213,39 @@ Below is the sample config file that we will use to standardize the raw delta ta
 }
 
 ```
+
+Here is the Config file structure explained :-
+
+1. `data_product_name`: <Name to assign to the DP after standardization>
+2. `raw_data_product_name`: <source raw data product name>
+3. `schema`:
+    `source_columns`: (columns coming directly from raw data product)
+        — `raw_name`: <column name in raw data product>
+        - `standardized_name`: <standardized name for the raw column>
+        - `data_type`: <The data type name we want to cast the column data to>
+        - `sql_transformation`: <The transformation rule that is written in Spark SQL>
+    `new_columns`: (columns obtained by performing a join with other DPs)
+        — `name`: <Name of the new column to be created>
+        - `data_type`: <The data type name we want to cast the column data to>
+        - `sql_transformation`: <The transformation rule that is written in Spark SQL>
+4. `metadata`: (Metadata to be assigned after all the columns added)
+    `column_descriptions`:
+        <column_name>: <description>
+
+
+We can see that the column `Product_ID` is derived from the `Product` data product by performing a join operation on the `Product_Name` column. The `Product_ID` column is added to the standardized data product by performing a merge operation on the `Product_Name` column.
+Also, the column `Total_Cost` is derived from the `price` and `quantity` columns. It is kept in source_columns as it is derived from the source columns and not from any other standardized data product.
+
 Save the above config file as `config.json`. Do not forget to replace `<absolute path of Product data product>` with the absolute path of the Product data product.
 
 Once created, we can validate the config file to ensure that it follows the required structure as in the template.
+
+`validate_config` takes the following parameters:
+- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
+- `config_path`: Path of the config file.
+- `config_type`: Type of the config file. Default is `json`.
+- `config_version`: Version of the config file. Default is `v0`.
+
 Run the below code to validate the config file.
 
 ```python
@@ -182,16 +253,27 @@ Run the below code to validate the config file.
 from standardizex import validate_config
 
 config_path = "config.json"
-validate_config(config_path)
+validate_config(spark = spark, config_path = config_path)
 
 ```
 If it returns `True`, then the config file is valid, and we can proceed with the standardization process. If it returns `False`, then there is some issue with the config file, and we need to correct it.
 
 3. **Standardization Process** 🔄 : 
 
-Now we will use the config file to standardize the raw data product. We need to provide the path of the config file, raw data product and the path where the standardized data product will be saved. In addition, we need to provide a temporary path where the intermediate standardized data product will be saved.
+Now we will use the config file to standardize the raw data product. We need to provide the SparkSession object, path of the config file, raw data product and the path where the standardized data product will be saved. In addition, we need to provide a temporary path where the intermediate standardized data product will be saved.
 
 Note : StandardizeX follow the full load process (truncate-load). Therefore, all the steps involved will be performed in the temporary/staging area, and then overwritten to the actual standardized data product path so that it does not affect the existing data while standardizing.
+
+`run_standardization` takes the following parameters:
+- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
+- `raw_dp_path`: Path of the raw data product.
+- `temp_std_dp_path`: Path of the temporary standardized data product.
+- `std_dp_path`: Path of the standardized data product.
+- `config_path`: Path of the config file.
+- `config_type`: Type of the config file. Default is `json`.
+- `config_version`: Version of the config file. Default is `v0`.
+- `verbose`: Boolean flag to print the logs. Default is `True`.
+
 
 ```python
 
@@ -206,9 +288,15 @@ raw_dp_path = os.path.join(current_dir, "data/supplier")
 temp_std_dp_path = os.path.join(current_dir, "data/Product_Supplier_temp")
 std_dp_path = os.path.join(current_dir, "data/Product_Supplier")
 
-run_standardization(config_path, raw_dp_path, temp_std_dp_path, std_dp_path)
+run_standardization(spark = spark, raw_dp_path = raw_dp_path, temp_std_dp_path = temp_std_dp_path, std_dp_path = std_dp_path, config_path = config_path)
 
 ```
+
+The final standardized data product will be saved at the path `data/Product_Supplier`. The standardized data product will look like below:-
+
+We can observe that the standardized data product has been created with the required columns, data types, and transformations as specified in the config file along with the new column `Product_ID` derived from the `Product` data product and the metadata descriptions.
+
+![Product_Supplier](/assets/Product_Supplier.png)
 
 ## Contributing 🤝
 

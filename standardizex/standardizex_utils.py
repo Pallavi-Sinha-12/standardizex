@@ -4,34 +4,23 @@ from standardizex.config.config_factory import ConfigFactory
 from pyspark.sql import SparkSession
 
 
-def get_spark_session():
-    if "spark" not in globals():
-        spark = (
-            SparkSession.builder.appName("DeltaTableCreation")
-            .config("spark.jars.packages", "io.delta:delta-spark_2.12:3.1.0")
-            .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-            .config(
-                "spark.sql.catalog.spark_catalog",
-                "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            )
-            .getOrCreate()
-        )
-    return spark
-
-
 def run_standardization(
-    config_path: str,
+    spark: SparkSession,
     raw_dp_path: str,
     temp_std_dp_path: str,
     std_dp_path: str,
-    verbose=True,
+    config_path: str,
+    config_type: str = "json",
+    config_version: str = "v0",
+    verbose: bool = True,
 ) -> None:
-
-    spark = get_spark_session()
 
     config_reader_factory = ConfigReaderFactory()
     config_reader = config_reader_factory.get_config_reader_instance(
-        spark=spark, config_path=config_path
+        spark=spark,
+        config_path=config_path,
+        config_type=config_type,
+        config_version=config_version,
     )
     data_standardizer = DataStandardizer(
         spark=spark,
@@ -42,9 +31,10 @@ def run_standardization(
     data_standardizer.run(config_reader=config_reader, verbose=verbose)
 
 
-def generate_config_template(config_type: str, config_version: str) -> dict:
+def generate_config_template(
+    spark: SparkSession, config_type: str = "json", config_version: str = "v0"
+) -> dict:
 
-    spark = get_spark_session()
     config = ConfigFactory.get_config_instance(
         spark=spark, config_type=config_type, config_version=config_version
     )
@@ -52,9 +42,13 @@ def generate_config_template(config_type: str, config_version: str) -> dict:
     return template
 
 
-def validate_config(config_type: str, config_version: str, config_path: str) -> bool:
+def validate_config(
+    spark: SparkSession,
+    config_path: str,
+    config_type: str = "json",
+    config_version: str = "v0",
+) -> bool:
 
-    spark = get_spark_session()
     config = ConfigFactory.get_config_instance(
         spark=spark, config_type=config_type, config_version=config_version
     )
