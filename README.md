@@ -216,21 +216,23 @@ Below is the sample config file that we will use to standardize the raw delta ta
 
 Here is the Config file structure explained :-
 
-1. `data_product_name`: <Name to assign to the DP after standardization>
-2. `raw_data_product_name`: <source raw data product name>
-3. `schema`:
-    `source_columns`: (columns coming directly from raw data product)
-        — `raw_name`: <column name in raw data product>
-        - `standardized_name`: <standardized name for the raw column>
-        - `data_type`: <The data type name we want to cast the column data to>
-        - `sql_transformation`: <The transformation rule that is written in Spark SQL>
-    `new_columns`: (columns obtained by performing a join with other DPs)
-        — `name`: <Name of the new column to be created>
-        - `data_type`: <The data type name we want to cast the column data to>
-        - `sql_transformation`: <The transformation rule that is written in Spark SQL>
-4. `metadata`: (Metadata to be assigned after all the columns added)
-    `column_descriptions`:
-        <column_name>: <description>
+### Config File Structure Explained
+
+1. **data_product_name**: `<Name to assign to the DP after standardization>`
+2. **raw_data_product_name**: `<source raw data product name>`
+3. **schema**:
+    - **source_columns**: (columns coming directly from raw data product)
+        - `raw_name`: `<column name in raw data product>`
+        - `standardized_name`: `<standardized name for the raw column>`
+        - `data_type`: `<The data type name we want to cast the column data to>`
+        - `sql_transformation`: `<The transformation rule that is written in Spark SQL>`
+    - **new_columns**: (columns obtained by performing a join with other DPs)
+        - `name`: `<Name of the new column to be created>`
+        - `data_type`: `<The data type name we want to cast the column data to>`
+        - `sql_transformation`: `<The transformation rule that is written in Spark SQL>`
+4. **metadata**: (Metadata to be assigned after all the columns added)
+    - **column_descriptions**:
+        - `<column_name>`: `<description>`
 
 
 We can see that the column `Product_ID` is derived from the `Product` data product by performing a join operation on the `Product_Name` column. The `Product_ID` column is added to the standardized data product by performing a merge operation on the `Product_Name` column.
