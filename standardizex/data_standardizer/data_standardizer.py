@@ -31,7 +31,12 @@ class DataStandardizer:
     """
 
     def __init__(
-        self, spark, raw_dp_path, temp_std_dp_path, std_dp_path, use_unity_catalog_for_data_products=False
+        self,
+        spark,
+        raw_dp_path,
+        temp_std_dp_path,
+        std_dp_path,
+        use_unity_catalog_for_data_products=False,
     ):
         self.spark = spark
         self.raw_dp_path = raw_dp_path

@@ -22,7 +22,7 @@ def run_standardization(
     std_catalog: str = None,
     std_schema: str = None,
     std_table: str = None,
-    verbose: bool = True
+    verbose: bool = True,
 ) -> None:
 
     config_reader_factory = ConfigReaderFactory()
