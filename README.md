@@ -1,7 +1,14 @@
 # StandardizeX 🚀
 
-StandardizeX is a python package that simplify data standardization process for delta format tables using a config-driven approach. 
-The package is designed to be used in a PySpark environment. Effortlessly transform raw data product into consistent, high-quality data products without writing complex code, while ensuring flexibility, scalability, and maintainability.
+Welcome to **StandardizeX**, the ultimate Python package designed to simplify the data standardization process for Delta format tables using a config-driven approach.
+
+Effortlessly transform raw data products into consistent, high-quality data products without writing complex code. StandardizeX ensures flexibility, scalability, and maintainability, making your data standardization process smoother and more efficient than ever before. 💪
+
+With StandardizeX, you can:
+- Use local paths or cloud storage paths (AWS S3, Azure Blob Storage, etc.)
+- Utilize Databricks Unity Catalog references (catalog.schema.table) for seamless integration
+
+Get started today and experience the power of streamlined data standardization! 🚀
 
 ## Features ✨
 
@@ -239,6 +246,7 @@ We can see that the column `Product_ID` is derived from the `Product` data produ
 Also, the column `Total_Cost` is derived from the `price` and `quantity` columns. It is kept in source_columns as it is derived from the source columns and not from any other standardized data product.
 
 Save the above config file as `config.json`. Do not forget to replace `<absolute path of Product data product>` with the absolute path of the Product data product.
+If you are using Unity catalog write as `catalog_name.schema_name.table_name`. Remove `delta.` from the path if you are using Unity catalog.
 
 Once created, we can validate the config file to ensure that it follows the required structure as in the template.
 
@@ -267,15 +275,26 @@ Now we will use the config file to standardize the raw data product. We need to 
 Note : StandardizeX follow the full load process (truncate-load). Therefore, all the steps involved will be performed in the temporary/staging area, and then overwritten to the actual standardized data product path so that it does not affect the existing data while standardizing.
 
 `run_standardization` takes the following parameters:
-- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
-- `raw_dp_path`: Path of the raw data product.
-- `temp_std_dp_path`: Path of the temporary standardized data product.
-- `std_dp_path`: Path of the standardized data product.
+- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem).
 - `config_path`: Path of the config file.
 - `config_type`: Type of the config file. Default is `json`.
 - `config_version`: Version of the config file. Default is `v0`.
+- `use_unity_catalog_for_data_products`: Boolean flag to indicate if Unity Catalog is used. Default is `False`.
+- `raw_dp_path`: Path of the raw data product. Default is `None`. Provide the path if not using Unity Catalog.
+- `temp_std_dp_path`: Path of the temporary standardized data product. Default is `None`. Provide the path if not using Unity Catalog.
+- `std_dp_path`: Path of the standardized data product. Default is `None`. Provide the path if not using Unity Catalog.
+- `raw_catalog`: Catalog name for the raw data product (if using Unity Catalog). Default is `None`. Provide the catalog name if using Unity Catalog.
+- `raw_schema`: Schema name for the raw data product (if using Unity Catalog). Default is `None`. Provide the schema name if using Unity Catalog.
+- `raw_table`: Table name for the raw data product (if using Unity Catalog). Default is `None`. Provide the table name if using Unity Catalog.
+- `temp_catalog`: Catalog name for the temporary standardized data product (if using Unity Catalog). Default is `None`. Provide the catalog name if using Unity Catalog.
+- `temp_schema`: Schema name for the temporary standardized data product (if using Unity Catalog). Default is `None`. Provide the schema name if using Unity Catalog.
+- `temp_table`: Table name for the temporary standardized data product (if using Unity Catalog). Default is `None`. Provide the table name if using Unity Catalog.
+- `std_catalog`: Catalog name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the catalog name if using Unity Catalog.
+- `std_schema`: Schema name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the schema name if using Unity Catalog.
+- `std_table`: Table name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the table name if using Unity Catalog.
 - `verbose`: Boolean flag to print the logs. Default is `True`.
 
+We will be using paths as we are using local PySpark environment. If you are using Unity Catalog, you can provide the catalog, schema and table names as well.
 
 ```python
 
@@ -290,11 +309,40 @@ raw_dp_path = os.path.join(current_dir, "data/supplier")
 temp_std_dp_path = os.path.join(current_dir, "data/Product_Supplier_temp")
 std_dp_path = os.path.join(current_dir, "data/Product_Supplier")
 
-run_standardization(spark = spark, raw_dp_path = raw_dp_path, temp_std_dp_path = temp_std_dp_path, std_dp_path = std_dp_path, config_path = config_path)
+run_standardization(
+    spark=spark,
+    config_path=config_path,
+    raw_dp_path=raw_dp_path,
+    temp_std_dp_path=temp_std_dp_path,
+    std_dp_path=std_dp_path
+)
 
 ```
 
-The final standardized data product will be saved at the path `data/Product_Supplier`. The standardized data product will look like below:-
+if using Unity Catalog, you can provide the catalog, schema and table names as well.
+
+```python
+
+from standardizex import run_standardization
+
+config_path = "config.json"
+
+run_standardization(
+    spark=spark,
+    config_path=config_path,
+    use_unity_catalog_for_data_products=True,
+    raw_catalog="raw_catalog",
+    raw_schema="raw_schema",
+    raw_table="supplier",
+    temp_catalog="temp_catalog",
+    temp_schema="temp_schema",
+    temp_table="Product_Supplier_temp",
+    std_catalog="std_catalog",
+    std_schema="std_schema",
+    std_table="Product_Supplier"
+)
+
+```
 
 We can observe that the standardized data product has been created with the required columns, data types, and transformations as specified in the config file along with the new column `Product_ID` derived from the `Product` data product and the metadata descriptions.
 

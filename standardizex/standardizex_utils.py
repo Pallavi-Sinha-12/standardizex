@@ -6,13 +6,23 @@ from pyspark.sql import SparkSession
 
 def run_standardization(
     spark: SparkSession,
-    raw_dp_path: str,
-    temp_std_dp_path: str,
-    std_dp_path: str,
     config_path: str,
     config_type: str = "json",
     config_version: str = "v0",
-    verbose: bool = True,
+    use_unity_catalog_for_data_products: bool = False,
+    raw_dp_path: str = None,
+    temp_std_dp_path: str = None,
+    std_dp_path: str = None,
+    raw_catalog: str = None,
+    raw_schema: str = None,
+    raw_table: str = None,
+    temp_catalog: str = None,
+    temp_schema: str = None,
+    temp_table: str = None,
+    std_catalog: str = None,
+    std_schema: str = None,
+    std_table: str = None,
+    verbose: bool = True
 ) -> None:
 
     config_reader_factory = ConfigReaderFactory()
@@ -22,11 +32,18 @@ def run_standardization(
         config_type=config_type,
         config_version=config_version,
     )
+
+    if use_unity_catalog_for_data_products:
+        raw_dp_path = f"{raw_catalog}.{raw_schema}.{raw_table}"
+        temp_std_dp_path = f"{temp_catalog}.{temp_schema}.{temp_table}"
+        std_dp_path = f"{std_catalog}.{std_schema}.{std_table}"
+
     data_standardizer = DataStandardizer(
         spark=spark,
         raw_dp_path=raw_dp_path,
         temp_std_dp_path=temp_std_dp_path,
         std_dp_path=std_dp_path,
+        use_unity_catalog_for_data_products=use_unity_catalog_for_data_products,
     )
     data_standardizer.run(config_reader=config_reader, verbose=verbose)
 

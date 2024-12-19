@@ -7,9 +7,11 @@ class DataStandardizer:
     A class that performs data standardization based on configuration settings.
 
     Args:
-        raw_dp_path (str): The path to the raw data.
-        temp_std_dp_path (str): The path to the temporary standardized data.
-        std_dp_path (str): The path to the final standardized data.
+        spark (SparkSession): The Spark session.
+        raw_dp_path (str): The path to the raw data or Unity Catalog reference.
+        temp_std_dp_path (str): The path to the temporary standardized data or Unity Catalog reference.
+        std_dp_path (str): The path to the final standardized data or Unity Catalog reference.
+        use_unity_catalog_for_data_products (bool): Flag to indicate if Unity Catalog is used for data products.
 
     Methods:
         create_temp_std_dp_with_source_columns(source_columns_schema_df):
@@ -28,11 +30,20 @@ class DataStandardizer:
             Runs the data standardization process based on the provided configuration reader.
     """
 
-    def __init__(self, spark, raw_dp_path, temp_std_dp_path, std_dp_path):
+    def __init__(
+        self, spark, raw_dp_path, temp_std_dp_path, std_dp_path, use_unity_catalog_for_data_products=False
+    ):
         self.spark = spark
         self.raw_dp_path = raw_dp_path
         self.temp_std_dp_path = temp_std_dp_path
         self.std_dp_path = std_dp_path
+        self.use_unity_catalog_for_data_products = use_unity_catalog_for_data_products
+
+    def get_table_reference(self, path_or_ref):
+        if self.use_unity_catalog_for_data_products:
+            return f"`{path_or_ref}`"
+        else:
+            return f"delta.`{path_or_ref}`"
 
     def create_temp_std_dp_with_source_columns(
         self, source_columns_schema_df: DataFrame
@@ -43,7 +54,7 @@ class DataStandardizer:
                 concat(
                     "SELECT ", 
                     array_join(collect_list(select_expression), ", "), 
-                    " FROM delta.`{self.raw_dp_path}`"
+                    " FROM {self.get_table_reference(self.raw_dp_path)}"
                 ) as select_query 
             FROM (
                 SELECT 
@@ -59,7 +70,7 @@ class DataStandardizer:
         print("temp_std_dp_path : ", self.temp_std_dp_path)
 
         create_sql_query = f"""
-            CREATE OR REPLACE TABLE delta.`{self.temp_std_dp_path}`
+            CREATE OR REPLACE TABLE {self.get_table_reference(self.temp_std_dp_path)}
             USING DELTA
             AS {select_query}
         """
@@ -69,16 +80,16 @@ class DataStandardizer:
     def add_new_columns_in_temp_std_dp(self, new_columns_schema_df: DataFrame):
         new_columns_schema_df_rows = new_columns_schema_df.collect()
         for row in new_columns_schema_df_rows:
-            add_new_columns_sql = f"ALTER TABLE delta.`{self.temp_std_dp_path}` ADD COLUMN {row['name']} {row['data_type']}"
+            add_new_columns_sql = f"ALTER TABLE {self.get_table_reference(self.temp_std_dp_path)} ADD COLUMN {row['name']} {row['data_type']}"
             sql_transformation = row["sql_transformation"].replace(
-                "{temp_std_dp_path}", self.temp_std_dp_path
+                "{temp_std_dp_path}", self.get_table_reference(self.temp_std_dp_path)
             )
             self.spark.sql(add_new_columns_sql)
             self.spark.sql(sql_transformation)
 
     def update_column_descriptions_metadata(self, column_descriptions_dict: dict):
         for column_name, description in column_descriptions_dict.items():
-            column_description_update_sql = f"ALTER TABLE delta.`{self.temp_std_dp_path}` CHANGE COLUMN {column_name} COMMENT '{description}';"
+            column_description_update_sql = f"ALTER TABLE {self.get_table_reference(self.temp_std_dp_path)} CHANGE COLUMN {column_name} COMMENT '{description}';"
             self.spark.sql(column_description_update_sql)
 
     def move_data_to_std_dp(self, column_sequence_order: list):
@@ -87,7 +98,7 @@ class DataStandardizer:
         temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
             "overwrite"
         ).save(self.std_dp_path)
-        self.spark.sql(f"DROP TABLE delta.`{self.temp_std_dp_path}`")
+        self.spark.sql(f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}")
 
     def run(self, config_reader: ConfigReaderContract, verbose=True):
 
