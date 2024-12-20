@@ -5,3 +5,7 @@ data
 .talismanrc
 metastore_db
 derby.log
+build/
+dist/
+*.egg-info/
+*.egg

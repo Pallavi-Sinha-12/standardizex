@@ -84,7 +84,7 @@ Product_data = [
     ("PROD-06", "kite", 25)
 ]
 
-supplier_df = spark.createDataFrame(supplier_table_data, schema=["sup_id", "name", "price", "prod_name", "quantity", "email"])
+supplier_df = spark.createDataFrame(supplier_data, schema=["sup_id", "name", "price", "prod_name", "quantity", "email"])
 Product_df = spark.createDataFrame(Product_data, schema=["Product_ID", "Product_Name", "Retail_Price"])
 
 supplier_df.write.format("delta").mode("overwrite").save("data/supplier")
