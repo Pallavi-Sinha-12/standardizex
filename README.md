@@ -263,10 +263,15 @@ Run the below code to validate the config file.
 from standardizex import validate_config
 
 config_path = "config.json"
-validate_config(spark = spark, config_path = config_path)
+is_valid_dict = validate_config(spark = spark, config_path = config_path)
+print(is_valid_dict)
+
+# Output
+# {'is_valid': True, 'error': ''}
 
 ```
-If it returns `True`, then the config file is valid, and we can proceed with the standardization process. If it returns `False`, then there is some issue with the config file, and we need to correct it.
+If `is_valid` key's value is `True`, then the config file is valid. If it is `False`, then the config file is invalid and the error message will be present in the `error` key.
+
 
 3. **Standardization Process** 🔄 : 
 

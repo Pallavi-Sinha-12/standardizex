@@ -1,6 +1,8 @@
 from standardizex.config_reader.config_reader_contract import ConfigReaderContract
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import explode
+import os
+from pkg_resources import resource_filename
 
 
 class v0JSONConfigReader(ConfigReaderContract):
@@ -24,7 +26,11 @@ class v0JSONConfigReader(ConfigReaderContract):
 
         """
         self.spark = spark
-        self.config_template_path = "standardizex/config/templates/json/v0.json"
+        self.config_template_path = resource_filename(
+            "standardizex", "config/templates/json/v0.json"
+        )
+        print(self.config_template_path)
+        # self.config_template_path = "standardizex/config/templates/json/v0.json"
         self.config_df = self.spark.read.option("multiLine", True).json(config_path)
 
     def read_source_columns_schema(self) -> DataFrame:

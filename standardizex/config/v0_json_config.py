@@ -1,13 +1,16 @@
 from standardizex.config.config_contract import ConfigContract
 import json
 from typing import Tuple
+from pkg_resources import resource_filename
 
 
 class v0JSONConfig(ConfigContract):
 
     def __init__(self, spark):
         self.spark = spark
-        self.template_path = "standardizex/config/templates/json/v0.json"
+        self.template_path = resource_filename(
+            "standardizex", "config/templates/json/v0.json"
+        )
 
     def generate_template(self) -> dict:
         """
