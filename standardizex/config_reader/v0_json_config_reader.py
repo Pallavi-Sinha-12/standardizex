@@ -93,3 +93,28 @@ class v0JSONConfigReader(ConfigReaderContract):
 
         """
         return list(self.config_df.first()["column_sequence_order"])
+    
+    def read_dependency_data_products(self) -> list:
+        """
+        Reads the dependency data products and their columns from the configuration file.
+
+        Returns:
+            dict: A dictionary containing the dependency data products with the column names and location.
+
+        """
+        dependency_data_products_df = self.config_df.select(
+            explode(self.config_df["dependency_data_products"]).alias("dependency_data_product")
+        )
+        dependency_data_products_rows = dependency_data_products_df.collect()
+        dependency_data_products_list = []
+        for row in dependency_data_products_rows:
+            dependency_data_product = row["dependency_data_product"]
+            dependency_data_products_list.append(
+                {
+                    "data_product_name": dependency_data_product["data_product_name"],
+                    "column_names": dependency_data_product["column_names"],
+                    "location": dependency_data_product["location"],
+                }
+            )
+
+        return dependency_data_products_list

@@ -1,6 +1,6 @@
 from pyspark.sql import DataFrame
 from standardizex.config_reader.config_reader_contract import ConfigReaderContract
-from utilities.custom_exceptions import *
+from standardizex.utilities.custom_exceptions import *
 
 class DataStandardizer:
     """
@@ -103,7 +103,7 @@ class DataStandardizer:
                 self.spark.sql(sql_transformation)
             except Exception as e:
                 raise NewColumnAdditionError(
-                    f"Error in adding new column - {row["name"]} for creating standardized data product. Here is the error ->\n: {e}"
+                    f"Error in adding new column - {row['name']} for creating standardized data product. Here is the error ->\n: {e}"
                 )
 
     def update_column_descriptions_metadata(self, column_descriptions_dict: dict):

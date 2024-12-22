@@ -84,3 +84,16 @@ def validate_config(
     )
     is_valid = config.validate_config(config_path=config_path)
     return is_valid
+
+def get_dependency_data_products(spark: SparkSession, config_path: str) -> list:
+    """
+    It returns the list containing the dependency data products with their respective data product names, column names, and locations.
+    This function is useful for listing which data products are required as a dependency for the standardization process for the given data product.
+    """
+
+    config_reader_factory = ConfigReaderFactory()
+    config_reader = config_reader_factory.get_config_reader_instance(
+        spark=spark, config_path=config_path
+    )
+    dependency_data_products = config_reader.read_dependency_data_products()
+    return dependency_data_products

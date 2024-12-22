@@ -1,6 +1,15 @@
 {
     "data_product_name": "<Name to assign to the DP after standardization>",
     "raw_data_product_name": "<source raw data product name>",
+    "dependency_data_products": [
+      {
+        "data_product_name": "<Name of the data product that this data product depends on for addition of new column>",
+        "column_names": [
+          "<column name in the dependent data product>"
+        ],
+        "location": "<Location of the dependency data product>"
+      }
+    ],
     "schema": {
       "source_columns": [
         {

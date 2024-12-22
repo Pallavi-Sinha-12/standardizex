@@ -30,12 +30,12 @@ class v0JSONConfig(ConfigContract):
             config_path (str): The path to the configuration file.
 
         Returns:
-            bool: True if the configuration is valid, False otherwise.
-            str: Error message if the configuration is invalid.
+            dict: A dictionary with validation status and error message if invalid.
         """
         required_keys = [
             "data_product_name",
             "raw_data_product_name",
+            "dependency_data_products",
             "schema",
             "metadata",
         ]
@@ -48,6 +48,7 @@ class v0JSONConfig(ConfigContract):
         ]
         new_column_keys = ["name", "data_type", "sql_transformation"]
         metadata_keys = ["column_descriptions"]
+        dependency_data_product_keys = ["data_product_name", "column_names", "location"]
 
         config_df = self.spark.read.option("multiLine", True).json(config_path)
         config = config_df.first().asDict()
@@ -58,6 +59,14 @@ class v0JSONConfig(ConfigContract):
                 validation_dict["is_valid"] = False
                 validation_dict["error"] = f"Missing required key: {key}"
                 return validation_dict
+
+        dependency_data_products = config["dependency_data_products"]
+        for dependency in dependency_data_products:
+            for key in dependency_data_product_keys:
+                if key not in dependency:
+                    validation_dict["is_valid"] = False
+                    validation_dict["error"] = f"Missing required key in dependency_data_products: {key}"
+                    return validation_dict
 
         schema = config["schema"]
         for key in schema_keys:
