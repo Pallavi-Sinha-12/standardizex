@@ -3,6 +3,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import explode
 import os
 from pkg_resources import resource_filename
+from standardizex.utilities.custom_exceptions import DependenciesNotFoundError
 
 
 class v0JSONConfigReader(ConfigReaderContract):
@@ -93,28 +94,38 @@ class v0JSONConfigReader(ConfigReaderContract):
 
         """
         return list(self.config_df.first()["column_sequence_order"])
-    
-    def read_dependency_data_products(self) -> list:
+
+    def validate_dependencies(self) -> dict:
         """
-        Reads the dependency data products and their columns from the configuration file.
+        Validates the dependency data products to ensure they exist and contain the required columns.
 
         Returns:
-            dict: A dictionary containing the dependency data products with the column names and location.
+            Returns a dictionary with the validation status and error message if invalid.
 
         """
+        error = ""
+        is_valid = True
         dependency_data_products_df = self.config_df.select(
-            explode(self.config_df["dependency_data_products"]).alias("dependency_data_product")
+            explode(self.config_df["dependency_data_products"]).alias(
+                "dependency_data_product"
+            )
         )
         dependency_data_products_rows = dependency_data_products_df.collect()
-        dependency_data_products_list = []
         for row in dependency_data_products_rows:
             dependency_data_product = row["dependency_data_product"]
-            dependency_data_products_list.append(
-                {
-                    "data_product_name": dependency_data_product["data_product_name"],
-                    "column_names": dependency_data_product["column_names"],
-                    "location": dependency_data_product["location"],
-                }
-            )
+            data_product_location = dependency_data_product["location"]
+            data_product_columns = dependency_data_product["column_names"]
+            try:
+                dp_df = self.spark.read.format("delta").load(data_product_location)
+            except Exception as e:
+                error = f"Error in loading dependency data product at {data_product_location}. Here is the error: \n {e}"
+                is_valid = False
+            dp_columns = dp_df.columns
+            dp_columns_set = set(dp_columns)
+            data_product_columns_set = set(data_product_columns)
+            if not data_product_columns_set.issubset(dp_columns_set):
+                missing_columns = data_product_columns_set - dp_columns_set
+                error = f"Dependency data product at {data_product_location} is missing the following columns: {missing_columns}. Here is the error: \n {e}"
+                is_valid = False
 
-        return dependency_data_products_list
+        return {"is_valid": is_valid, "error": error}

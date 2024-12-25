@@ -2,6 +2,7 @@ from standardizex.config.config_contract import ConfigContract
 import json
 from typing import Tuple
 from pkg_resources import resource_filename
+from standardizex.utilities.custom_exceptions import ConfigTemplateGenerationError
 
 
 class v0JSONConfig(ConfigContract):
@@ -17,10 +18,15 @@ class v0JSONConfig(ConfigContract):
         Generates a configuration template file.
 
         """
-        with open(self.template_path, "r") as file:
-            template_dict = json.load(file)
+        try:
+            with open(self.template_path, "r") as file:
+                template_dict = json.load(file)
 
-        return template_dict
+            return template_dict
+        except Exception as e:
+            raise ConfigTemplateGenerationError(
+                f"Failed to generate template: Here is the error:\n {str(e)}"
+            )
 
     def validate_config(self, config_path: str) -> dict:
         """
@@ -65,7 +71,9 @@ class v0JSONConfig(ConfigContract):
             for key in dependency_data_product_keys:
                 if key not in dependency:
                     validation_dict["is_valid"] = False
-                    validation_dict["error"] = f"Missing required key in dependency_data_products: {key}"
+                    validation_dict["error"] = (
+                        f"Missing required key in dependency_data_products: {key}"
+                    )
                     return validation_dict
 
         schema = config["schema"]

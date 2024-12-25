@@ -2,6 +2,7 @@ from pyspark.sql import DataFrame
 from standardizex.config_reader.config_reader_contract import ConfigReaderContract
 from standardizex.utilities.custom_exceptions import *
 
+
 class DataStandardizer:
     """
     A class that performs data standardization based on configuration settings.
@@ -128,7 +129,9 @@ class DataStandardizer:
                 f"Error in copying data to standardized data product. Here is the error ->\n: {e}"
             )
         try:
-            self.spark.sql(f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}")
+            self.spark.sql(
+                f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}"
+            )
         except Exception as e:
             raise TemporaryStandardizedDataProductDropError(
                 f"Error in dropping temporary standardized data product. Here is the error ->\n: {e}"

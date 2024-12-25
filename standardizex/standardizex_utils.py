@@ -24,9 +24,8 @@ def run_standardization(
     std_table: str = None,
     verbose: bool = True,
 ) -> None:
-    
     """
-    The main function that performs the data standardization. 
+    The main function that performs the data standardization.
     It reads the raw data product, applies the transformations and rules specified in the configuration file, and generates a standardized data product that is consistent and ready for downstream consumption.
     """
 
@@ -57,7 +56,7 @@ def generate_config_template(
     spark: SparkSession, config_type: str = "json", config_version: str = "v0"
 ) -> dict:
     """
-    Generates a template for the configuration file used in the standardization process. 
+    Generates a template for the configuration file used in the standardization process.
     It provides a clear structure to guide users in creating their own configuration files tailored to their data.
     """
 
@@ -75,8 +74,9 @@ def validate_config(
     config_version: str = "v0",
 ) -> dict:
     """
-    Ensures the configuration file is accurate and adheres to the required schema and rules before being applied. 
+    Ensures the configuration file is accurate and adheres to the required schema and rules before being applied.
     By validating the configuration upfront, it helps prevent errors and ensures a smooth standardization process.
+    Returns a dictionary with the validation status and error message if invalid.
     """
 
     config = ConfigFactory.get_config_instance(
@@ -85,15 +85,24 @@ def validate_config(
     is_valid = config.validate_config(config_path=config_path)
     return is_valid
 
-def get_dependency_data_products(spark: SparkSession, config_path: str) -> list:
+
+def validate_dependencies_for_standardization(
+    spark: SparkSession,
+    config_path: str,
+    config_type: str = "json",
+    config_version: str = "v0",
+) -> list:
     """
-    It returns the list containing the dependency data products with their respective data product names, column names, and locations.
-    This function is useful for listing which data products are required as a dependency for the standardization process for the given data product.
+    Validates the dependency data products to ensure they exist and contain the required columns.
+    Returns a dictionary with the validation status and error message if invalid.
     """
 
     config_reader_factory = ConfigReaderFactory()
     config_reader = config_reader_factory.get_config_reader_instance(
-        spark=spark, config_path=config_path
+        spark=spark,
+        config_path=config_path,
+        config_type=config_type,
+        config_version=config_version,
     )
-    dependency_data_products = config_reader.read_dependency_data_products()
-    return dependency_data_products
+    is_valid_dict = config_reader.validate_dependencies()
+    return is_valid_dict

@@ -25,6 +25,7 @@ StandardizeX provides three core functions to streamline the process of standard
 
 - **generate_config_template**: Generates a template for the configuration file used in the standardization process. It provides a clear structure to guide users in creating their own configuration files tailored to their data.
 - **validate_config**: Ensures the configuration file is accurate and adheres to the required schema and rules before being applied. By validating the configuration upfront, it helps prevent errors and ensures a smooth standardization process.
+- **validate_dependencies_for_standardization**: Verifies the presence and integrity of all dependency data products referenced in the configuration. This includes checking that the required tables exist and contain the specified columns, ensuring the standardization process has all necessary prerequisites to run successfully.
 - **run_standardization**: The main function that performs the data standardization. It reads the raw data product, applies the transformations and rules specified in the configuration file, and generates a standardized data product that is consistent and ready for downstream consumption.
 
 
@@ -272,8 +273,33 @@ print(is_valid_dict)
 ```
 If `is_valid` key's value is `True`, then the config file is valid. If it is `False`, then the config file is invalid and the error message will be present in the `error` key.
 
+3. **Dependency Validation** 🧐:
 
-3. **Standardization Process** 🔄 : 
+Before standardizing the raw data product, we need to validate the dependencies. This step ensures that all the required data products (for creating new columns are present) and contain the necessary columns as specified in the config file. This is an important step to ensure that the standardization process runs smoothly without any errors.
+
+`validate_dependencies_for_standardization` takes the following parameters:
+- `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
+- `config_path`: Path of the config file.
+- `config_type`: Type of the config file. Default is `json`.
+- `config_version`: Version of the config file. Default is `v0`.
+
+```python
+
+from standardizex import validate_dependencies_for_standardization
+
+config_path = "config.json"
+is_valid_dict = validate_dependencies_for_standardization(spark = spark, config_path = config_path)
+print(is_valid_dict)
+
+# Output
+# {'is_valid': True, 'error': ''}
+
+```
+
+If `is_valid` key's value is `True`, then the dependencies are present. If it is `False`, then the dependencies are not present and the error message will be present in the `error` key.
+
+
+4. **Standardization Process** 🔄 : 
 
 Now we will use the config file to standardize the raw data product. We need to provide the SparkSession object, path of the config file, raw data product and the path where the standardized data product will be saved. In addition, we need to provide a temporary path where the intermediate standardized data product will be saved.
 
