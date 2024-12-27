@@ -28,6 +28,21 @@ StandardizeX provides three core functions to streamline the process of standard
 - **validate_dependencies_for_standardization**: Verifies the presence and integrity of all dependency data products referenced in the configuration. This includes checking that the required tables exist and contain the specified columns, ensuring the standardization process has all necessary prerequisites to run successfully.
 - **run_standardization**: The main function that performs the data standardization. It reads the raw data product, applies the transformations and rules specified in the configuration file, and generates a standardized data product that is consistent and ready for downstream consumption.
 
+## Error Handling 🚨
+
+The standardizex package includes custom error classes to handle various exceptions that may occur during the standardization process. These error classes provide clear and descriptive messages to help users identify and debug issues effectively.
+
+Here are the exceptions defined in the package and their purpose:
+
+- **ConfigTypeOrVersionError**: Raised when the configuration type or version is not supported.
+- **ConfigTemplateGenerationError**: Raised when there is an issue generating the configuration template for standardization.
+- **SourceColumnsAdditionError**: Raised when there is an issue adding source columns to the standardized data product.
+- **NewColumnAdditionError**: Raised when an error occurs while adding new columns during the standardization process.
+- **ColumnDescriptionUpdateError**: Raised when the descriptions of columns fail to update.
+- **CopyToStandardizedDataProductError**: Raised when an error occurs while copying data from the temporary standardized data product to the actual standardized data product.
+- **TemporaryStandardizedDataProductDropError**: Raised when there is an error in dropping the temporary standardized data product.
+
+
 
 ## Installation 📦
 
@@ -108,16 +123,29 @@ First we will import the package and get the template of the config file. This t
 ```python
 from standardizex import generate_config_template
 
-config_template = generate_config_template(spark = spark)
-print(config_template)
+try:
+    config_template = generate_config_template(spark = spark)
+    print(config_template)
+except Exception as e:
+    print("Exception Name : ", e.__class__.__name__)
+    print("Exception Message : ", str(e))
 ```
 
-The config template will look like below:-
+The config template will look like below. In case of any error, the exception can be caught using the try-except block.
 
 ```json
 {
     "data_product_name": "<Name to assign to the DP after standardization>",
     "raw_data_product_name": "<source raw data product name>",
+    "dependency_data_products": [
+      {
+        "data_product_name": "<Name of the data product that this data product depends on for addition of new column>",
+        "column_names": [
+          "<column name in the dependent data product>"
+        ],
+        "location": "<Location of the dependency data product>"
+      }
+    ],
     "schema": {
       "source_columns": [
         {
@@ -152,6 +180,13 @@ Below is the sample config file that we will use to standardize the raw delta ta
 {
     "data_product_name" : "Product_Supplier",
     "raw_data_product_name" : "supplier",
+    "dependency_data_products" : [
+        {
+            "data_product_name" : "Product",
+            "column_names" : ["Product_Name", "Product_ID"],
+            "location" : "<absolute path of Product data product>"
+        }
+    ],
     "schema" : {
         "source_columns" : [
             {
@@ -228,6 +263,10 @@ Here is the Config file structure explained :-
 
 1. **data_product_name**: `<Name to assign to the DP after standardization>`
 2. **raw_data_product_name**: `<source raw data product name>`
+3. **dependency_data_products**: (List of data products that are required to create new columns)
+    - `<data_product_name>`: `<absolute path of the data product>`
+    - `<column_names>`: `<List of column names that are required to create new columns>`
+    - `<location>`: `<Location of the data product. It can be a local or cloud storage path or Unity catalog reference (catalog.schema.table)>`
 3. **schema**:
     - **source_columns**: (columns coming directly from raw data product)
         - `raw_name`: `<column name in raw data product>`
@@ -245,6 +284,7 @@ Here is the Config file structure explained :-
 
 We can see that the column `Product_ID` is derived from the `Product` data product by performing a join operation on the `Product_Name` column. The `Product_ID` column is added to the standardized data product by performing a merge operation on the `Product_Name` column.
 Also, the column `Total_Cost` is derived from the `price` and `quantity` columns. It is kept in source_columns as it is derived from the source columns and not from any other standardized data product.
+The dependency_data_products section specifies the dependency on the `Product` data product to create the `Product_ID` column using the `Product_Name` column.
 
 Save the above config file as `config.json`. Do not forget to replace `<absolute path of Product data product>` with the absolute path of the Product data product.
 If you are using Unity catalog write as `catalog_name.schema_name.table_name`. Remove `delta.` from the path if you are using Unity catalog.
@@ -275,7 +315,8 @@ If `is_valid` key's value is `True`, then the config file is valid. If it is `Fa
 
 3. **Dependency Validation** 🧐:
 
-Before standardizing the raw data product, we need to validate the dependencies. This step ensures that all the required data products (for creating new columns are present) and contain the necessary columns as specified in the config file. This is an important step to ensure that the standardization process runs smoothly without any errors.
+Before standardizing the raw data product, we need to validate the external dependencies. This step ensures that all the required data products for creating new columns are present and contain the necessary columns as specified in the config file. In this case, we need to validate the `Product` data product if it is present and contains the `Product_Name` and `Product_ID` columns.
+This is an important step to ensure that the standardization process runs smoothly without any errors.
 
 `validate_dependencies_for_standardization` takes the following parameters:
 - `spark`: SparkSession object. Ensure you initialize a Spark session in your environment with the necessary configurations for your storage backend (e.g., Azure, S3, or local filesystem)
@@ -323,7 +364,7 @@ Note : StandardizeX follow the full load process (truncate-load). Therefore, all
 - `std_catalog`: Catalog name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the catalog name if using Unity Catalog.
 - `std_schema`: Schema name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the schema name if using Unity Catalog.
 - `std_table`: Table name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the table name if using Unity Catalog.
-- `verbose`: Boolean flag to print the logs. Default is `True`.
+- `verbose`: Boolean flag. If set to `True`, detailed information about the standardized data product will be displayed which includes the location of the data product, the number of records, the number of columns, a sample of the data (first 5 rows), and the schema with column names, data types, and descriptions. Default is `True`.
 
 We will be using paths as we are using local PySpark environment. If you are using Unity Catalog, you can provide the catalog, schema and table names as well.
 
@@ -340,13 +381,17 @@ raw_dp_path = os.path.join(current_dir, "data/supplier")
 temp_std_dp_path = os.path.join(current_dir, "data/Product_Supplier_temp")
 std_dp_path = os.path.join(current_dir, "data/Product_Supplier")
 
-run_standardization(
-    spark=spark,
-    config_path=config_path,
-    raw_dp_path=raw_dp_path,
-    temp_std_dp_path=temp_std_dp_path,
-    std_dp_path=std_dp_path
-)
+try:
+    run_standardization(
+        spark=spark,
+        config_path=config_path,
+        raw_dp_path=raw_dp_path,
+        temp_std_dp_path=temp_std_dp_path,
+        std_dp_path=std_dp_path
+    )
+except Exception as e:
+    print("Exception Name : ", e.__class__.__name__)
+    print("Exception Message : ", str(e))
 
 ```
 
@@ -358,26 +403,32 @@ from standardizex import run_standardization
 
 config_path = "config.json"
 
-run_standardization(
-    spark=spark,
-    config_path=config_path,
-    use_unity_catalog_for_data_products=True,
-    raw_catalog="raw_catalog",
-    raw_schema="raw_schema",
-    raw_table="supplier",
-    temp_catalog="temp_catalog",
-    temp_schema="temp_schema",
-    temp_table="Product_Supplier_temp",
-    std_catalog="std_catalog",
-    std_schema="std_schema",
-    std_table="Product_Supplier"
-)
+try:
+    run_standardization(
+        spark=spark,
+        config_path=config_path,
+        use_unity_catalog_for_data_products=True,
+        raw_catalog="raw_catalog",
+        raw_schema="raw_schema",
+        raw_table="supplier",
+        temp_catalog="temp_catalog",
+        temp_schema="temp_schema",
+        temp_table="Product_Supplier_temp",
+        std_catalog="std_catalog",
+        std_schema="std_schema",
+        std_table="Product_Supplier"
+    )
+except Exception as e:
+    print("Exception Name : ", e.__class__.__name__)
+    print("Exception Message : ", str(e))
 
 ```
 
-We can observe that the standardized data product has been created with the required columns, data types, and transformations as specified in the config file along with the new column `Product_ID` derived from the `Product` data product and the metadata descriptions.
+We can observe that the standardized data product has been created with the required columns, data types, and transformations as specified in the config file along with the new column `Product_ID` derived from the `Product` data product and the metadata descriptions. Also the column sequence order is maintained as specified in the config file. In case of any error, the exception can be caught using the try-except block.
 
-![Product_Supplier](/assets/Product_Supplier.png)
+Below are the logs that is displayed after running the standardization process.
+
+![Product_Supplier](/assets/std_dp.png)
 
 ## Contributing 🤝
 

@@ -25,7 +25,7 @@ class v0JSONConfig(ConfigContract):
             return template_dict
         except Exception as e:
             raise ConfigTemplateGenerationError(
-                f"Failed to generate template: Here is the error:\n {str(e)}"
+                f"Failed to generate template: Here is the error -> {str(e)}"
             )
 
     def validate_config(self, config_path: str) -> dict:

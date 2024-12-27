@@ -75,10 +75,9 @@ class DataStandardizer:
             df = self.spark.sql(select_query_sql)
         except Exception as e:
             raise SourceColumnsAdditionError(
-                f"Error in adding source columns for creating standardized data product. Here is the error ->\n: {e}"
+                f"Error in adding source columns for creating standardized data product. Here is the error -> {e}"
             )
         select_query = df.first()["select_query"]
-        print("temp_std_dp_path : ", self.temp_std_dp_path)
 
         create_sql_query = f"""
             CREATE OR REPLACE TABLE {self.get_table_reference(self.temp_std_dp_path)}
@@ -89,7 +88,7 @@ class DataStandardizer:
             self.spark.sql(create_sql_query)
         except Exception as e:
             raise SourceColumnsAdditionError(
-                f"Error in adding source columns for creating standardized data product. Here is the error ->\n: {e}"
+                f"Error in adding source columns for creating standardized data product. Here is the error -> {e}"
             )
 
     def add_new_columns_in_temp_std_dp(self, new_columns_schema_df: DataFrame):
@@ -104,7 +103,7 @@ class DataStandardizer:
                 self.spark.sql(sql_transformation)
             except Exception as e:
                 raise NewColumnAdditionError(
-                    f"Error in adding new column - {row['name']} for creating standardized data product. Here is the error ->\n: {e}"
+                    f"Error in adding new column - {row['name']} for creating standardized data product. Here is the error -> {e}"
                 )
 
     def update_column_descriptions_metadata(self, column_descriptions_dict: dict):
@@ -114,7 +113,7 @@ class DataStandardizer:
                 self.spark.sql(column_description_update_sql)
             except Exception as e:
                 raise ColumnDescriptionUpdateError(
-                    f"Error in updating column description for column - {column_name} in temporary standardized data product. Here is the error ->\n: {e}"
+                    f"Error in updating column description for column - {column_name} in temporary standardized data product. Here is the error -> {e}"
                 )
 
     def move_data_to_std_dp(self, column_sequence_order: list):
@@ -126,7 +125,7 @@ class DataStandardizer:
             ).save(self.std_dp_path)
         except Exception as e:
             raise CopyToStandardizedDataProductError(
-                f"Error in copying data to standardized data product. Here is the error ->\n: {e}"
+                f"Error in copying data to standardized data product. Here is the error -> {e}"
             )
         try:
             self.spark.sql(
@@ -134,37 +133,43 @@ class DataStandardizer:
             )
         except Exception as e:
             raise TemporaryStandardizedDataProductDropError(
-                f"Error in dropping temporary standardized data product. Here is the error ->\n: {e}"
+                f"Error in dropping temporary standardized data product. Here is the error -> {e}"
+            )
+
+    def display_standardized_data_product(self):
+        truncate = lambda value, width: (
+            value if len(value) <= width else value[: width - 3] + "..."
+        )
+        delta_table = self.spark.read.format("delta").load(self.std_dp_path)
+
+        print("Standardized Data Product: \n")
+        print("Location: ", self.std_dp_path)
+        print("Number of Records: ", delta_table.count())
+        print("Number of Columns: ", len(delta_table.columns))
+        print("Sample Data:")
+        delta_table.show(5)
+        print("Schema:")
+        print(f"{'Column Name':<30}{'Data Type':<15}{'Description'}\n{'-' * 100}")
+        for field in delta_table.schema.fields:
+            print(
+                f"{truncate(field.name, 30):<30}"
+                f"{truncate(field.dataType.simpleString(), 15):<15}"
+                f"{truncate(field.metadata.get('comment', 'No description'), 100)}"
             )
 
     def run(self, config_reader: ConfigReaderContract, verbose=True):
 
-        try:
-            source_columns_schema_df = config_reader.read_source_columns_schema()
-            self.create_temp_std_dp_with_source_columns(source_columns_schema_df)
+        source_columns_schema_df = config_reader.read_source_columns_schema()
+        self.create_temp_std_dp_with_source_columns(source_columns_schema_df)
 
-            new_columns_schema_df = config_reader.read_new_columns_schema()
-            self.add_new_columns_in_temp_std_dp(new_columns_schema_df)
+        new_columns_schema_df = config_reader.read_new_columns_schema()
+        self.add_new_columns_in_temp_std_dp(new_columns_schema_df)
 
-            column_descriptions_dict = config_reader.read_column_descriptions_metadata()
-            self.update_column_descriptions_metadata(column_descriptions_dict)
+        column_descriptions_dict = config_reader.read_column_descriptions_metadata()
+        self.update_column_descriptions_metadata(column_descriptions_dict)
 
-            column_sequence_order = config_reader.read_column_sequence_order()
-            self.move_data_to_std_dp(column_sequence_order)
+        column_sequence_order = config_reader.read_column_sequence_order()
+        self.move_data_to_std_dp(column_sequence_order)
 
-            if verbose:
-                print("Raw df : ")
-                raw_df = self.spark.read.format("delta").load(self.raw_dp_path)
-                raw_df.show(5)
-
-                print("Standardized df : ")
-                std_df = self.spark.read.format("delta").load(self.std_dp_path)
-                std_df.show(5)
-
-                print("Schema information for Standardized df : ")
-                std_df.printSchema()
-
-        except Exception as e:
-            raise StandardizationError(
-                f"Error in standardizing data. Here is the error ->\n: {e}"
-            )
+        if verbose:
+            self.display_standardized_data_product()

@@ -3,7 +3,6 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import explode
 import os
 from pkg_resources import resource_filename
-from standardizex.utilities.custom_exceptions import DependenciesNotFoundError
 
 
 class v0JSONConfigReader(ConfigReaderContract):
@@ -30,7 +29,6 @@ class v0JSONConfigReader(ConfigReaderContract):
         self.config_template_path = resource_filename(
             "standardizex", "config/templates/json/v0.json"
         )
-        print(self.config_template_path)
         # self.config_template_path = "standardizex/config/templates/json/v0.json"
         self.config_df = self.spark.read.option("multiLine", True).json(config_path)
 
@@ -103,8 +101,7 @@ class v0JSONConfigReader(ConfigReaderContract):
             Returns a dictionary with the validation status and error message if invalid.
 
         """
-        error = ""
-        is_valid = True
+        is_valid_dict = {"is_valid": True, "error": ""}
         dependency_data_products_df = self.config_df.select(
             explode(self.config_df["dependency_data_products"]).alias(
                 "dependency_data_product"
@@ -118,14 +115,19 @@ class v0JSONConfigReader(ConfigReaderContract):
             try:
                 dp_df = self.spark.read.format("delta").load(data_product_location)
             except Exception as e:
-                error = f"Error in loading dependency data product at {data_product_location}. Here is the error: \n {e}"
-                is_valid = False
+                is_valid_dict["error"] = (
+                    f"Error in loading dependency data product at {data_product_location}. Here is the error -> {e}"
+                )
+                is_valid_dict["is_valid"] = False
+                return is_valid_dict
             dp_columns = dp_df.columns
             dp_columns_set = set(dp_columns)
             data_product_columns_set = set(data_product_columns)
             if not data_product_columns_set.issubset(dp_columns_set):
                 missing_columns = data_product_columns_set - dp_columns_set
-                error = f"Dependency data product at {data_product_location} is missing the following columns: {missing_columns}. Here is the error: \n {e}"
-                is_valid = False
+                is_valid_dict["error"] = (
+                    f"Dependency data product at {data_product_location} is missing the following columns: {missing_columns}."
+                )
+                is_valid_dict["is_valid"] = False
 
-        return {"is_valid": is_valid, "error": error}
+        return is_valid_dict
