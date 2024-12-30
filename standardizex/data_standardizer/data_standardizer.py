@@ -129,7 +129,8 @@ class DataStandardizer:
             )
         try:
             self.spark.sql(
-                f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}"
+                # f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}"
+                f"DROP TABLE IF EXISTS `{self.temp_std_dp_path}`"
             )
         except Exception as e:
             raise TemporaryStandardizedDataProductDropError(
