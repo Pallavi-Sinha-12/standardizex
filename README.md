@@ -1,5 +1,10 @@
 # StandardizeX 🚀
 
+![Last commit](https://img.shields.io/github/last-commit/Pallavi-Sinha-12/standardizex?color=green&label=Last%20commit)
+![Repo size](https://img.shields.io/github/repo-size/Pallavi-Sinha-12/standardizex?color=orange&label=Repo%20size)
+[![Stars](https://img.shields.io/github/stars/Pallavi-Sinha-12/standardizex?color=yellow&label=Stars)](https://github.com/Pallavi-Sinha-12/standardizex/stargazers)
+[![Forks](https://img.shields.io/github/forks/Pallavi-Sinha-12/standardizex?color=orange&label=Forks)](https://github.com/Pallavi-Sinha-12/standardizex/forks)
+
 Welcome to **StandardizeX**, the ultimate Python package designed to simplify the data standardization process for Delta format tables using a config-driven approach.
 
 Effortlessly transform raw data products into consistent, high-quality data products without writing complex code. StandardizeX ensures flexibility, scalability, and maintainability, making your data standardization process smoother and more efficient than ever before. 💪
