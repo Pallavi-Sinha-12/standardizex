@@ -65,11 +65,11 @@ Let's take an example to understand how we can use StandardizeX to standardize a
 
 Before starting, we will create a sample raw data product - `supplier` in delta format.
 
-![supplier](/assets/supplier.png)
+![supplier](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/assets/supplier.png?raw=true)
 
 Here is another standardized data product — `Product` that we will be using to bring new column while standardizing the raw data product.
 
-![Product](/assets/Product.png)
+![Product](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/assets/Product.png?raw=true)
 
 Below is the code to create both the tables:-
 
@@ -433,7 +433,7 @@ We can observe that the standardized data product has been created with the requ
 
 Below are the logs that is displayed after running the standardization process.
 
-![Product_Supplier](/assets/std_dp.png)
+![Product_Supplier](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/assets/std_dp.png?raw=true)
 
 ## Contributing 🤝
 
