@@ -105,5 +105,7 @@ def validate_dependencies_for_standardization(
         config_type=config_type,
         config_version=config_version,
     )
-    is_valid_dict = config_reader.validate_dependencies(use_unity_catalog_for_data_products = use_unity_catalog_for_data_products)
+    is_valid_dict = config_reader.validate_dependencies(
+        use_unity_catalog_for_data_products=use_unity_catalog_for_data_products
+    )
     return is_valid_dict

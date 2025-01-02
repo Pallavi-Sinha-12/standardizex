@@ -130,18 +130,18 @@ class DataStandardizer:
                 ).saveAsTable(self.std_dp_path)
             else:
                 temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
-                "overwrite"
-            ).save(self.std_dp_path)
+                    "overwrite"
+                ).save(self.std_dp_path)
         except Exception as e:
             raise CopyToStandardizedDataProductError(
                 f"Error in copying data to standardized data product. Here is the error -> {e}"
             )
         try:
             if self.use_unity_catalog_for_data_products:
-                self.spark.sql(
-                    f"DROP TABLE IF EXISTS {self.temp_std_dp_path}"
+                self.spark.sql(f"DROP TABLE IF EXISTS {self.temp_std_dp_path}")
+                print(
+                    f"Temporary standardized data product '{self.temp_std_dp_path}' has been successfully dropped."
                 )
-                print(f"Temporary standardized data product '{self.temp_std_dp_path}' has been successfully dropped.")
             else:
                 print(
                     f"Temporary standardized data product '{self.temp_std_dp_path}' cannot be dropped as it is not a Unity Catalog table. "
