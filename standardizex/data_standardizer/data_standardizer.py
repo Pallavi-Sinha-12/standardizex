@@ -118,10 +118,18 @@ class DataStandardizer:
                 )
 
     def move_data_to_std_dp(self, column_sequence_order: list):
-        temp_std_df = self.spark.read.format("delta").load(self.temp_std_dp_path)
+        if self.use_unity_catalog_for_data_products:
+            temp_std_df = self.spark.sql(f"SELECT * FROM {self.temp_std_dp_path}")
+        else:
+            temp_std_df = self.spark.read.format("delta").load(self.temp_std_dp_path)
         temp_std_df = temp_std_df.select(column_sequence_order)
         try:
-            temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
+            if self.use_unity_catalog_for_data_products:
+                temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
+                    "overwrite"
+                ).saveAsTable(self.std_dp_path)
+            else:
+                temp_std_df.write.option("mergeSchema", "true").format("delta").mode(
                 "overwrite"
             ).save(self.std_dp_path)
         except Exception as e:
@@ -148,7 +156,10 @@ class DataStandardizer:
         truncate = lambda value, width: (
             value if len(value) <= width else value[: width - 3] + "..."
         )
-        delta_table = self.spark.read.format("delta").load(self.std_dp_path)
+        if self.use_unity_catalog_for_data_products:
+            delta_table = self.spark.sql(f"SELECT * FROM {self.std_dp_path}")
+        else:
+            delta_table = self.spark.read.format("delta").load(self.std_dp_path)
 
         print("Standardized Data Product: \n")
         print("Location: ", self.std_dp_path)
