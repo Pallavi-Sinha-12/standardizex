@@ -328,13 +328,14 @@ This is an important step to ensure that the standardization process runs smooth
 - `config_path`: Path of the config file.
 - `config_type`: Type of the config file. Default is `json`.
 - `config_version`: Version of the config file. Default is `v0`.
+- `use_unity_catalog_for_data_products`: Boolean flag to indicate if Unity Catalog is used. Default is `False`.
 
 ```python
 
 from standardizex import validate_dependencies_for_standardization
 
 config_path = "config.json"
-is_valid_dict = validate_dependencies_for_standardization(spark = spark, config_path = config_path)
+is_valid_dict = validate_dependencies_for_standardization(spark = spark, config_path = config_path, use_unity_catalog_for_data_products=False)
 print(is_valid_dict)
 
 # Output

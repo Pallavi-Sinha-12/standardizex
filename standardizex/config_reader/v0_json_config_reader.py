@@ -93,7 +93,7 @@ class v0JSONConfigReader(ConfigReaderContract):
         """
         return list(self.config_df.first()["column_sequence_order"])
 
-    def validate_dependencies(self) -> dict:
+    def validate_dependencies(self, use_unity_catalog_for_data_products) -> dict:
         """
         Validates the dependency data products to ensure they exist and contain the required columns.
 
@@ -113,7 +113,10 @@ class v0JSONConfigReader(ConfigReaderContract):
             data_product_location = dependency_data_product["location"]
             data_product_columns = dependency_data_product["column_names"]
             try:
-                dp_df = self.spark.read.format("delta").load(data_product_location)
+                if use_unity_catalog_for_data_products:
+                    dp_df = self.spark.sql(f"SELECT * FROM {data_product_location}")
+                else:
+                    dp_df = self.spark.read.format("delta").load(data_product_location)
             except Exception as e:
                 is_valid_dict["error"] = (
                     f"Error in loading dependency data product at {data_product_location}. Here is the error -> {e}"

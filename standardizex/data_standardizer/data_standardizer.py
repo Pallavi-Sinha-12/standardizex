@@ -47,7 +47,7 @@ class DataStandardizer:
 
     def get_table_reference(self, path_or_ref):
         if self.use_unity_catalog_for_data_products:
-            return f"`{path_or_ref}`"
+            return f"{path_or_ref}"
         else:
             return f"delta.`{path_or_ref}`"
 
@@ -84,6 +84,7 @@ class DataStandardizer:
             USING DELTA
             AS {select_query}
         """
+        print(create_sql_query)
         try:
             self.spark.sql(create_sql_query)
         except Exception as e:
@@ -128,10 +129,16 @@ class DataStandardizer:
                 f"Error in copying data to standardized data product. Here is the error -> {e}"
             )
         try:
-            self.spark.sql(
-                # f"DROP TABLE {self.get_table_reference(self.temp_std_dp_path)}"
-                f"DROP TABLE IF EXISTS `{self.temp_std_dp_path}`"
-            )
+            if self.use_unity_catalog_for_data_products:
+                self.spark.sql(
+                    f"DROP TABLE IF EXISTS {self.temp_std_dp_path}"
+                )
+                print(f"Temporary standardized data product '{self.temp_std_dp_path}' has been successfully dropped.")
+            else:
+                print(
+                    f"Temporary standardized data product '{self.temp_std_dp_path}' cannot be dropped as it is not a Unity Catalog table. "
+                    "Please delete the corresponding data folder manually using the file system utilities or cloud storage tools."
+                )
         except Exception as e:
             raise TemporaryStandardizedDataProductDropError(
                 f"Error in dropping temporary standardized data product. Here is the error -> {e}"
