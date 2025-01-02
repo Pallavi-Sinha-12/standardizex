@@ -8,9 +8,9 @@ with open("requirements.txt") as f:
 
 setup(
     name="standardizex",
-    version="0.0.2",
+    version="0.0.3",
     description="""
-    Standardizex is a Python package that streamlines data standardization for Delta format tables through a configuration-driven approach. It helps transform raw data products into consistent, high-quality standardized outputs by offering capabilities such as 🗑️ removing unnecessary columns, 🔄 renaming columns, 🔧 modifying data types, 📝 updating column metadata, 🔄 applying complex transformations, and ➕ adding new derived columns seamlessly.
+    Standardizex is a Python package that streamlines data standardization for Delta format tables through a configuration-driven approach.
     """,
     long_description=long_description,
     long_description_content_type="text/markdown",
