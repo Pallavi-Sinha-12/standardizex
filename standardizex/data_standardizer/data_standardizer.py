@@ -38,7 +38,7 @@ class DataStandardizer:
         temp_std_dp_path,
         std_dp_path,
         use_unity_catalog_for_data_products=False,
-        verbose = True
+        verbose=True,
     ):
         self.spark = spark
         self.raw_dp_path = raw_dp_path
@@ -73,9 +73,6 @@ class DataStandardizer:
                 FROM source_columns_config_table
             )
         """
-        if self.verbose:
-            print("Generated SQL query for creating the temporary standardized data product with source columns, including data type casting and transformations:")
-            print(select_query_sql)
         try:
             df = self.spark.sql(select_query_sql)
         except Exception as e:
@@ -89,6 +86,11 @@ class DataStandardizer:
             USING DELTA
             AS {select_query}
         """
+        if self.verbose:
+            print(
+                "Generated SQL query for creating the temporary standardized data product with source columns, including data type casting and transformations:"
+            )
+            print(create_sql_query)
         try:
             self.spark.sql(create_sql_query)
         except Exception as e:
@@ -104,7 +106,9 @@ class DataStandardizer:
                 "{temp_std_dp_path}", self.get_table_reference(self.temp_std_dp_path)
             )
             if self.verbose:
-                print(f"Adding new column - {row['name']} with data type - {row['data_type']} and transformation - {sql_transformation}")
+                print(
+                    f"Adding new column - {row['name']} with data type - {row['data_type']} and transformation - {sql_transformation}"
+                )
             try:
                 self.spark.sql(add_new_columns_sql)
                 self.spark.sql(sql_transformation)
@@ -117,7 +121,9 @@ class DataStandardizer:
         for column_name, description in column_descriptions_dict.items():
             column_description_update_sql = f"ALTER TABLE {self.get_table_reference(self.temp_std_dp_path)} CHANGE COLUMN {column_name} COMMENT '{description}';"
             if self.verbose:
-                print(f"Updating column description for column - {column_name} with description - {description}. The SQL query is as follows:")
+                print(
+                    f"Updating column description for column - {column_name} with description - {description}. The SQL query is as follows:"
+                )
                 print(column_description_update_sql)
             try:
                 self.spark.sql(column_description_update_sql)
@@ -146,7 +152,9 @@ class DataStandardizer:
                 f"Error in copying data to standardized data product. Here is the error -> {e}"
             )
         if self.verbose:
-            print(f"Data has been successfully copied to the standardized data product '{self.std_dp_path}'.")
+            print(
+                f"Data has been successfully copied to the standardized data product '{self.std_dp_path}'."
+            )
         try:
             if self.use_unity_catalog_for_data_products:
                 self.spark.sql(f"DROP TABLE IF EXISTS {self.temp_std_dp_path}")
