@@ -11,7 +11,7 @@ Effortlessly transform raw data products into consistent, high-quality data prod
 
 With StandardizeX, you can:
 - Use local paths or cloud storage paths (AWS S3, Azure Blob Storage, etc.)
-- Utilize Databricks Unity Catalog references (catalog.schema.table) for seamless integration
+- Utilize Databricks Unity Catalog references (catalog.schema.table) for seamless integration with Databricks environments. In the future, support for other metastores like Hive, AWS Glue, etc. can be added.
 
 Get started today and experience the power of streamlined data standardization! 🚀
 
@@ -457,6 +457,7 @@ Here is the steps you can follow to contribute to this project:
 ## Conclusion  🎉
 
 'StandardizeX' is a step forward in simplifying the data standardization process. While it currently offers a limited set of features, it is designed with extensibility in mind, making it easy to enhance. Its extensibility means it can be easily adapted to include additional functionalities such as data quality validations , data product versioning and other metadata enhancements, further broadening its applicability and usefulness. Additionally, new configuration templates can be easily added by updating the version, and support for templates in YAML or other formats can also be incorporated.
+For metastore, only Databricks Unity Catalog is supported as of now. Support for other metastores like Hive, AWS Glue, etc. can be added in the future.
 
 ## Feedback 🌟💬
 
