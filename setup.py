@@ -8,7 +8,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="standardizex",
-    version="0.0.5",
+    version="0.0.6",
     description="""
     Standardizex is a Python package that streamlines data standardization for Delta format tables through a configuration-driven approach.
     """,
