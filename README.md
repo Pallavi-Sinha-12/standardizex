@@ -370,7 +370,8 @@ Note : StandardizeX follow the full load process (truncate-load). Therefore, all
 - `std_catalog`: Catalog name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the catalog name if using Unity Catalog.
 - `std_schema`: Schema name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the schema name if using Unity Catalog.
 - `std_table`: Table name for the standardized data product (if using Unity Catalog). Default is `None`. Provide the table name if using Unity Catalog.
-- `verbose`: Boolean flag. If set to `True`, detailed information about the standardized data product will be displayed which includes the location of the data product, the number of records, the number of columns, a sample of the data (first 5 rows), and the schema with column names, data types, and descriptions. Default is `True`.
+- `verbose`: Boolean flag. If set to `True`, The Spark SQL queries executed during the standardization process will be displayed with other info. Along with that,
+detailed information about the standardized data product will be displayed which includes the location of the data product, the number of records, the number of columns, a sample of the data (first 5 rows), and the schema with column names, data types, and descriptions. Default is `True`.
 
 We will be using paths as we are using local PySpark environment. If you are using Unity Catalog, you can provide the catalog, schema and table names as well.
 

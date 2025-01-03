@@ -48,8 +48,9 @@ def run_standardization(
         temp_std_dp_path=temp_std_dp_path,
         std_dp_path=std_dp_path,
         use_unity_catalog_for_data_products=use_unity_catalog_for_data_products,
+        verbose=verbose
     )
-    data_standardizer.run(config_reader=config_reader, verbose=verbose)
+    data_standardizer.run(config_reader=config_reader)
 
 
 def generate_config_template(

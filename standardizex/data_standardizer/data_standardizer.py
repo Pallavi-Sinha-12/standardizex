@@ -38,12 +38,14 @@ class DataStandardizer:
         temp_std_dp_path,
         std_dp_path,
         use_unity_catalog_for_data_products=False,
+        verbose = True
     ):
         self.spark = spark
         self.raw_dp_path = raw_dp_path
         self.temp_std_dp_path = temp_std_dp_path
         self.std_dp_path = std_dp_path
         self.use_unity_catalog_for_data_products = use_unity_catalog_for_data_products
+        self.verbose = verbose
 
     def get_table_reference(self, path_or_ref):
         if self.use_unity_catalog_for_data_products:
@@ -71,6 +73,9 @@ class DataStandardizer:
                 FROM source_columns_config_table
             )
         """
+        if self.verbose:
+            print("Generated SQL query for creating the temporary standardized data product with source columns, including data type casting and transformations:")
+            print(select_query_sql)
         try:
             df = self.spark.sql(select_query_sql)
         except Exception as e:
@@ -84,7 +89,6 @@ class DataStandardizer:
             USING DELTA
             AS {select_query}
         """
-        print(create_sql_query)
         try:
             self.spark.sql(create_sql_query)
         except Exception as e:
@@ -99,6 +103,8 @@ class DataStandardizer:
             sql_transformation = row["sql_transformation"].replace(
                 "{temp_std_dp_path}", self.get_table_reference(self.temp_std_dp_path)
             )
+            if self.verbose:
+                print(f"Adding new column - {row['name']} with data type - {row['data_type']} and transformation - {sql_transformation}")
             try:
                 self.spark.sql(add_new_columns_sql)
                 self.spark.sql(sql_transformation)
@@ -110,6 +116,9 @@ class DataStandardizer:
     def update_column_descriptions_metadata(self, column_descriptions_dict: dict):
         for column_name, description in column_descriptions_dict.items():
             column_description_update_sql = f"ALTER TABLE {self.get_table_reference(self.temp_std_dp_path)} CHANGE COLUMN {column_name} COMMENT '{description}';"
+            if self.verbose:
+                print(f"Updating column description for column - {column_name} with description - {description}. The SQL query is as follows:")
+                print(column_description_update_sql)
             try:
                 self.spark.sql(column_description_update_sql)
             except Exception as e:
@@ -136,6 +145,8 @@ class DataStandardizer:
             raise CopyToStandardizedDataProductError(
                 f"Error in copying data to standardized data product. Here is the error -> {e}"
             )
+        if self.verbose:
+            print(f"Data has been successfully copied to the standardized data product '{self.std_dp_path}'.")
         try:
             if self.use_unity_catalog_for_data_products:
                 self.spark.sql(f"DROP TABLE IF EXISTS {self.temp_std_dp_path}")
@@ -144,7 +155,7 @@ class DataStandardizer:
                 )
             else:
                 print(
-                    f"Temporary standardized data product '{self.temp_std_dp_path}' cannot be dropped as it is not a Unity Catalog table. "
+                    f"Temporary standardized data product '{self.temp_std_dp_path}' cannot be dropped using Spark SQL. "
                     "Please delete the corresponding data folder manually using the file system utilities or cloud storage tools."
                 )
         except Exception as e:
@@ -176,7 +187,7 @@ class DataStandardizer:
                 f"{truncate(field.metadata.get('comment', 'No description'), 100)}"
             )
 
-    def run(self, config_reader: ConfigReaderContract, verbose=True):
+    def run(self, config_reader: ConfigReaderContract):
 
         source_columns_schema_df = config_reader.read_source_columns_schema()
         self.create_temp_std_dp_with_source_columns(source_columns_schema_df)
@@ -190,5 +201,5 @@ class DataStandardizer:
         column_sequence_order = config_reader.read_column_sequence_order()
         self.move_data_to_std_dp(column_sequence_order)
 
-        if verbose:
+        if self.verbose:
             self.display_standardized_data_product()
