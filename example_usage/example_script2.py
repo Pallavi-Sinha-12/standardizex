@@ -5,6 +5,8 @@ The delta tables are stored in DBFS and this code snippet can be used in Databri
 
 # Spark session is already initialized in Databricks notebook
 
+# Install the package - %pip install standardizex
+
 # Create a sample raw data product - supplier in delta format.
 # Also create another standardized data product — Product that we will be using to bring new column while standardizing the raw data product.
 

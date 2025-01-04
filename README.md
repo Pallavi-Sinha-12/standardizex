@@ -437,6 +437,15 @@ Below are the logs that is displayed after running the standardization process.
 
 ![Product_Supplier](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/assets/std_dp.png?raw=true)
 
+You can find the complete code in the [example](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/example_usage/example_script1.py)
+
+Other example scripts are also available for reference:
+- [Example 2 - Delta tables saved in Databricks File System](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/example_usage/example_script2.py)
+- [Example 3 - Delta tables saved in Azure Data Lake Storage Gen2](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/example_usage/example_script3.py)
+- [Example 4 - Delta tables in Databricks Unity Catalog](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/example_usage/example_script4.py)
+
+
+
 ## Contributing 🤝
 
 Contributions are always welcome!
