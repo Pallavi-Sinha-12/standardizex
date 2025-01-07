@@ -26,11 +26,16 @@ This package currently supports the following capabilities for transforming a ra
 - 🔄 Data transformations.
 - ➕ Addition of new columns derived from existing columns or other standardized data products.
 
+
+Here is the architecture diagram that illustrates the flow of the standardizex package:
+
+![Architecture Diagram](https://github.com/Pallavi-Sinha-12/standardizex/blob/main/assets/architecture.png?raw=true)
+
 StandardizeX provides four core functions to streamline the process of standardizing Delta tables:
 
 - **generate_config_template**: Generates a template for the configuration file used in the standardization process. It provides a clear structure to guide users in creating their own configuration files tailored to their data.
 - **validate_config**: Ensures the configuration file is accurate and adheres to the required schema and rules before being applied. By validating the configuration upfront, it helps prevent errors and ensures a smooth standardization process.
-- **validate_dependencies_for_standardization**: Verifies the presence and integrity of all dependency data products referenced in the configuration. This includes checking that the required tables exist and contain the specified columns, ensuring the standardization process has all necessary prerequisites to run successfully. Note that it does not check the existence of the raw data product which is going to be standardized.
+- **validate_dependencies_for_standardization**: Validate the external dependencies of any other standardized data product being used to bring new columns. This includes checking that the required data products exist and contain the specified columns, ensuring the standardization process has all necessary prerequisites to run successfully. Note that it does not check the existence of the raw data product which is going to be standardized.
 - **run_standardization**: The main function that performs the data standardization. It reads the raw data product, applies the transformations and rules specified in the configuration file, and generates a standardized data product that is consistent and ready for downstream consumption.
 
 ## Error Handling 🚨
